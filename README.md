@@ -14,19 +14,17 @@ bernama 19–21 Nov, tag kepastian+sumber per kartu (100%).
 
 ## Entry
 - Dimensi: **1024 × 1024 px** (lolos gate server)
-- Ukuran: **210.709 byte**
-- sha256: **cebaf3162378ebef11b3a6cfc53ed39d95cd081756b47391590e8dba459cb16d**
+- Ukuran: **211.818 byte**
+- sha256: **0c40b8fffe23372d30b4c5e9c9a683ddd9a9635d8194de4ed4ed2c2cce437cfa**
 - Pemenang duel: **varian A, 38/40** (lihat `duel.md`)
 - Aspek render: **0,859** (3900×4539)
 - `main.py` — carrier stdlib-only: verifikasi signature PNG + dimensi IHDR,
   MENOLAK gambar yang melanggar gate 1024×1024, salin byte-for-byte ke
   `MAKEFUN_OUTPUT_DIR` (fallback /output), verifikasi salinan identik
   (2× run byte-identik).
-- Margin: **12/13** (`margin_check.py --fresh ni22-fresh-g7.txt`) — satu
-  baris gagal: brief segar 2/21 (10%), lihat penjelasan di `duel.md`
-  (daftar segar hampir seluruhnya kata kunci topik kartu; menaikkan angka
-  itu butuh duplikasi kartu ke brief / buangan DATE CHECK sebagai isi,
-  keduanya dilarang audit kriteria).
+- Margin: **13/13** (`margin_check.py --fresh ni22-fresh-g7.txt`) — brief
+  dilengkapi kelanjutan cerita kartu hari yang sama (pola ALSO ON pemenang
+  edisi ini): penghitungan drone Kyiv, bantahan Bahrain, teks final COP31.
 - Vonis 300px: masthead + headline lead lebar TERBACA; headline mini
   terlihat sebagai blok tebal (batas format broadsheet 36 cerita).
 
