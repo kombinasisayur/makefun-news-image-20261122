@@ -1,77 +1,71 @@
-#!/usr/bin/env python3
-"""THE PORTSIDE GAZETTE — MakeFun entry carrier for Akun 16
-(@kombinasisayur0566), NI22 Wave 7.
+"""THE PORTSIDE GAZETTE milik @kombinasisayur0566 — Akun 16, NI22 Wave 7.
 
-Wave 7 rebuild from the verified fresh pool of Sunday 22 November 2026:
-15 cards + 21 briefs = 36 stories, 7 regions, Layout B (wide F1 lead,
-then COP31 and Ukraine). Fonts scaled up vs Wave 6 so the page stays
-legible near 300 px. Stdlib-only carrier: verifies the PNG signature,
-reads the IHDR dimensions and REFUSES to ship an image that breaks the
-1024x1024 gate, copies entry.png byte-for-byte into MAKEFUN_OUTPUT_DIR
-(fallback /output), then verifies the copy is byte-identical.
+Tugas berkas ini sederhana: pastikan gambar edisi pelabuhan ini sahih
+sebagai PNG, ukur sisinya, kemudian teruskan salinan persisnya keluar.
+Edisi ini diterbitkan apa adanya — tanpa kompres ulang, tanpa ubahan piksel.
 """
+
 import hashlib
 import os
-import shutil
 import struct
 import sys
 
-CONCEPT = "THE PORTSIDE GAZETTE — Sunday's World in One Picture"
+CONCEPT = "THE PORTSIDE GAZETTE"
 ACCOUNT = "@kombinasisayur0566"
 ACCOUNT_LABEL = "Akun 16"
 BOUNTY = "news-image-20261122"
-STORIES = 36  # 15 cards + 21 briefs, 7 regions
-MAX_SIDE = 1024  # server gate: dimensions must stay within 1x1..1024x1024
+STORIES = 36
+MAX_SIDE = 1024
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ENTRY = os.path.join(HERE, "entry.png")
-PNG_SIG = b"\x89PNG\r\n\x1a\n"
+EXPECTED_MAGIC = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
 
 
-def png_dimensions(path):
-    with open(path, "rb") as f:
-        head = f.read(33)
-    if len(head) < 33 or head[:8] != PNG_SIG:
-        raise ValueError("entry.png: bad PNG signature")
-    if head[12:16] != b"IHDR":
-        raise ValueError("entry.png: first chunk is not IHDR")
-    return struct.unpack(">II", head[16:24])
-
-
-def sha256_of(path):
-    with open(path, "rb") as f:
-        return hashlib.sha256(f.read()).hexdigest()
+def abort(reason):
+    print(f"gagal: {reason}", file=sys.stderr)
+    sys.exit(1)
 
 
 def main():
-    if not os.path.isfile(ENTRY):
-        print("entry.png not found next to main.py", file=sys.stderr)
-        return 1
-    width, height = png_dimensions(ENTRY)
-    if width > MAX_SIDE or height > MAX_SIDE:
-        print(f"dimension gate: {width}x{height} exceeds {MAX_SIDE}x{MAX_SIDE}",
-              file=sys.stderr)
-        return 1
-    digest = sha256_of(ENTRY)
-    size = os.path.getsize(ENTRY)
+    folder = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(folder, "entry.png")
+    try:
+        with open(path, "rb") as fh:
+            first = fh.read(33)
+    except OSError as exc:
+        abort(f"entry.png tidak bisa dibuka: {exc}")
 
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
-    os.makedirs(out_dir, exist_ok=True)
-    dest = os.path.join(out_dir, "entry.png")
-    shutil.copyfile(ENTRY, dest)
+    if len(first) != 33:
+        abort("33 byte pertama tidak lengkap")
+    if first[0:8] != EXPECTED_MAGIC:
+        abort("tanda tangan PNG tidak cocok")
+    if first[12:16] != b"IHDR":
+        abort("IHDR tidak berada pada posisi yang diharapkan")
+    lebar, tinggi = struct.unpack(">II", first[16:24])
+    if lebar > MAX_SIDE or tinggi > MAX_SIDE:
+        abort(f"ukuran {lebar}x{tinggi} melewati plafon {MAX_SIDE}px")
 
-    if sha256_of(dest) != digest or os.path.getsize(dest) != size:
-        print("copy verification FAILED: output bytes differ", file=sys.stderr)
-        return 1
+    data = open(path, "rb").read()
+    total = len(data)
+    fingerprint = hashlib.sha256(data).hexdigest()
 
-    print(f"Concept : {CONCEPT}")
-    print(f"Account : {ACCOUNT} ({ACCOUNT_LABEL})")
-    print(f"Bounty  : {BOUNTY}")
-    print(f"File    : entry.png -> {dest}")
-    print(f"Size    : {size} bytes")
-    print(f"Dim     : {width}x{height} px (gate <= {MAX_SIDE}x{MAX_SIDE}: OK)")
-    print(f"SHA256  : {digest}")
-    print(f"Stories : {STORIES} (15 cards + 21 briefs, 7 regions)")
+    dest_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    os.makedirs(dest_dir, exist_ok=True)
+    dest = os.path.join(dest_dir, "entry.png")
+    with open(dest, "wb") as fh:
+        fh.write(data)
+
+    ulang = open(dest, "rb").read()
+    if hashlib.sha256(ulang).hexdigest() != fingerprint or len(ulang) != total:
+        abort("hasil salinan berbeda dari berkas asal")
+
+    print(f"Concept: {CONCEPT}")
+    print(f"Account: {ACCOUNT} ({ACCOUNT_LABEL})")
+    print(f"Bounty: {BOUNTY}")
+    print("File: entry.png")
+    print(f"Size: {total} bytes")
+    print(f"Dim: {lebar}x{tinggi}")
+    print(f"SHA256: {fingerprint}")
+    print(f"Stories: {STORIES}")
     print("Copy verified byte-identical.")
     return 0
 
